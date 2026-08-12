@@ -82,6 +82,19 @@ void startupAW()
 
 void setUartMux(int channel)
 {
+  if(channel != 0 && channel != 1)
+  {
+    return;
+  }
+
+  if(channel == uart_mux_channel)
+  {
+    return;
+  }
+
+  // Discard bytes from the previously selected device before switching.
+  Serial1.flush(false);
+
   if(channel == 0)
   {
     aw.digitalWrite(AP_U1_MUX_0, LOW);
@@ -92,6 +105,8 @@ void setUartMux(int channel)
     aw.digitalWrite(AP_U1_MUX_0, HIGH);
     aw.digitalWrite(AP_U1_MUX_1, LOW);
   }
+
+  uart_mux_channel = channel;
 }
 
 void checkWetness()
@@ -278,6 +293,10 @@ void checkSerial()
       {
         serPrintBat();
       }
+      else if(command == "?printKISS")
+      {
+        serPrintKISS();
+      }
       else if(command == "?testBG")
       {
         readTelemetryUntilQuit();
@@ -298,6 +317,7 @@ void checkSerial()
         Serial.println("?reboot - Reboot the remote");
         Serial.println("?printPWM - Print PWM values until sent 'quit'");
         Serial.println("?printBat - Print analog Bat voltage until sent 'quit'");
+        Serial.println("?printKISS - Print KISS ESC telemetry until sent 'quit'");
         Serial.println("?printRSSI - Print RSSI and SNR values until sent 'quit'");
         Serial.println("?printTasks - Print task stack usage until sent 'quit'");
         Serial.println("?printGPS - Print GPS info");
@@ -400,16 +420,20 @@ void serPrintBat()
         }
     }
 
-    if(usrConf.data_src == 1)
+    if(usrConf.data_src == DATA_SRC_ANALOG)
     {
       getUbatLoop();
     }
-    else if(usrConf.data_src == 2)
+    else if(usrConf.data_src == DATA_SRC_VESC_UART)
     {
       getVescLoop();
     }
+    else if(usrConf.data_src == DATA_SRC_KISS_TELEMETRY)
+    {
+      getKissTelemetryLoop();
+    }
 
-    if(usrConf.data_src == 1)
+    if(usrConf.data_src == DATA_SRC_ANALOG)
     {
       uint16_t raw = analogRead(P_UBAT_MEAS);
       raw += analogRead(P_UBAT_MEAS);
@@ -423,15 +447,25 @@ void serPrintBat()
       Serial.print("V, final: ");
       Serial.println(vActual + usrConf.ubat_offset);
     }
-    else if(usrConf.data_src == 2)
+    else if(usrConf.data_src == DATA_SRC_VESC_UART ||
+            usrConf.data_src == DATA_SRC_KISS_TELEMETRY)
     {
-      getVescLoop();
       Serial.print("Measured: ");
       Serial.print(fbatVolt);
       Serial.print("V, offset: ");
       Serial.print(usrConf.ubat_offset);
       Serial.print("V, final: ");
-      Serial.println(fbatVolt + usrConf.ubat_offset);
+      Serial.print(fbatVolt + usrConf.ubat_offset);
+      if(usrConf.data_src == DATA_SRC_KISS_TELEMETRY)
+      {
+        Serial.print("V, temperature: ");
+        Serial.print(telemetry.foil_temp);
+        Serial.println(" C");
+      }
+      else
+      {
+        Serial.println();
+      }
     }
     else
     {

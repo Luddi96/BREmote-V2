@@ -85,18 +85,23 @@ void loop()
       getGPSLoop();
     }
 
-    if(usrConf.data_src == 1)
+    if(usrConf.data_src == DATA_SRC_ANALOG)
     {
       getUbatLoop();
     }
-    else if(usrConf.data_src == 2)
+    else if(usrConf.data_src == DATA_SRC_VESC_UART)
     {
       getVescLoop();
     }
+  }
+
+  // KISS ESC telemetry is a continuous stream and must be drained frequently.
+  if(usrConf.data_src == DATA_SRC_KISS_TELEMETRY)
+  {
+    getKissTelemetryLoop();
   }
 
   //telemetry.foil_speed = (millis()/1000) % 100;
 
   vTaskDelay(pdMS_TO_TICKS(10));
 }
-

@@ -60,7 +60,7 @@ struct confStruct {
     uint16_t dummy_delete_me;
 
     //UART config
-    uint16_t data_src; //0: off, 1:analog, 2: VESC UART
+    uint16_t data_src; //0: off, 1: analog, 2: VESC UART, 3: KISS telemetry
 
     // GPS features related flags
     uint16_t gps_en;         // GPS runtime enable flag (0=disabled, 1=enabled)
@@ -90,6 +90,13 @@ struct confStruct {
     uint8_t own_address[3];
     uint8_t dest_address[3];
 
+};
+
+enum DataSource : uint16_t {
+  DATA_SRC_OFF = 0,
+  DATA_SRC_ANALOG = 1,
+  DATA_SRC_VESC_UART = 2,
+  DATA_SRC_KISS_TELEMETRY = 3
 };
 
 confStruct usrConf;
@@ -158,6 +165,9 @@ volatile uint8_t steering_received = 127;
 
 volatile unsigned long get_vesc_timer = 0;
 volatile unsigned long last_uart_packet = 0;
+volatile unsigned long last_kiss_packet = 0;
+
+int uart_mux_channel = -1;
 
 volatile uint8_t bind_pin_state = 0;
 
