@@ -27,6 +27,20 @@
 #include <WiFi.h>
 #include <WebServer.h>
 
+/*
+** begin() writes the Rx/Tx fallback mode from standbyXOSC and there is no
+** setter for it afterwards, so it is written again once begin() is through.
+** See startupRadio() for why begin() itself has to run with the flag off.
+*/
+class SX1262Fallback : public SX1262 {
+  public:
+    SX1262Fallback(Module* m) : SX1262(m) {}
+    int16_t fallbackToXOSC() {
+      uint8_t data = RADIOLIB_SX126X_RX_TX_FALLBACK_MODE_STDBY_XOSC;
+      return this->getMod()->SPIwriteStream(RADIOLIB_SX126X_CMD_SET_RX_TX_FALLBACK_MODE, &data, 1);
+    }
+};
+
 #define SW_VERSION 2
 const char* CONF_FILE_PATH = "/data.txt";
 const char* BC_FILE_PATH = "/batconf.txt";

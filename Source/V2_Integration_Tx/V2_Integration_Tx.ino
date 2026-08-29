@@ -1,6 +1,6 @@
 #include "BREmote_V2_Tx.h"
 
-SX1262 radio = new Module(P_LORA_NSS, P_LORA_DIO, P_LORA_RST, P_LORA_BUSY);
+SX1262Fallback radio = new Module(P_LORA_NSS, P_LORA_DIO, P_LORA_RST, P_LORA_BUSY);
 Adafruit_ADS1115 ads;
 Ticker ticksrc;
 
