@@ -441,28 +441,40 @@ void checkSerial()
             }
           }
       }
+
+      else if (command.startsWith("?setPassword")) {
+        String data = command.substring(command.indexOf(":") + 1);  // Extract everything after ":"
+        serSetPassword(data);
+      }
+      else if (command == "?password") {
+        serPrintPassword();
+      }
       
       else if (command == "?") {
-        // List all possible inputs
-        Serial.println("Possible commands:");
-        Serial.println("?conf - print info, usrConf");
-        Serial.println("?setConf:<data> - write B64 to SPIFFS");
-        Serial.println("?setBC:<data> - write B64 to SPIFFS");
-        Serial.println("?applyConf - read conf from SPIFFS and write to usrConf");
-        Serial.println("?clearSPIFFS - Clear usrConf from SPIFFS");
-        Serial.println("?clearBC - Clear batcal from SPIFFS");
-        Serial.println("?reboot - Reboot the remote");
-        Serial.println("?printPWM - Print PWM values until sent 'quit'");
-        Serial.println("?printBat - Print analog Bat voltage until sent 'quit'");
-        Serial.println("?printRSSI - Print RSSI and SNR values until sent 'quit'");
-        Serial.println("?printTasks - Print task stack usage until sent 'quit'");
-        Serial.println("?gpsDiag - Diagnostic GPS complet");
-        Serial.println("?fmTest - Follow-Me zone hysteresis test");
-        Serial.println("?fmDemo - Follow-Me demo frames");
-        Serial.println("?debugTelemetry - Debug telemetry values sent to TX");
-        Serial.println("?ledDebug - Debug LED status conditions");
+          // List all possible inputs
+          Serial.println("Possible commands:");
+          Serial.println("?conf - print info, usrConf");
+          Serial.println("?setConf:<data> - write B64 to SPIFFS");
+          Serial.println("?setBC:<data> - write B64 to SPIFFS");
+          Serial.println("?applyConf - read conf from SPIFFS and write to usrConf");
+          Serial.println("?clearSPIFFS - Clear usrConf from SPIFFS");
+          Serial.println("?clearBC - Clear batcal from SPIFFS");
+          Serial.println("?reboot - Reboot the remote");
+          Serial.println("?printPWM - Print PWM values until sent 'quit'");
+          Serial.println("?printBat - Print analog Bat voltage until sent 'quit'");
 
-        Serial.println("?debug - Enter debug menu for logging functions");
+          Serial.println("?list - List log files on SPIFFS/SD");
+          Serial.println("?download <filename> - Download a log file");
+          Serial.println("?delete <filename> - Delete a log file");
+          Serial.println("?start - Start logging");
+          Serial.println("?stop - Stop logging");
+          Serial.println("?rate <hz> - Set log rate");
+
+          Serial.println("?dbit - Show debug_byte bit table");
+          Serial.println("?dbit <bit_no> - Flip a debug_byte bit (0-15)");
+
+          Serial.println("?setPassword:xxxx - Set 4-digit hex password (0-9, A-F)");
+          Serial.println("?password - Print current password");
       }
       else {
         Serial.println("Unknown command. Type '?' for help.");
@@ -472,6 +484,43 @@ void checkSerial()
       Serial.println("Unknown command. Type '?' for help.");
     }
   }
+}
+
+void serSetPassword(String data) {
+  data.trim();
+
+  if (data.length() != 4) {
+    Serial.println("The password must consist of 4 characters, from the following set: 0-9, A-F");
+    return;
+  }
+
+  data.toUpperCase();
+
+  for (int i = 0; i < 4; i++) {
+    char c = data[i];
+    bool isValidHex = (c >= '0' && c <= '9') || (c >= 'A' && c <= 'F');
+    if (!isValidHex) {
+      Serial.println("The password must consist of 4 characters, from the following set: 0-9, A-F");
+      return;
+    }
+  }
+
+  uint16_t value = (uint16_t)strtoul(data.c_str(), nullptr, 16);
+  usrConf.kalman_en = value;
+
+  Serial.print("Password set to: AP-");
+  Serial.print(data);
+  Serial.println("-KEY");
+
+  saveConfToSPIFFS(usrConf);
+}
+
+void serPrintPassword() {
+  char buf[5];
+  snprintf(buf, sizeof(buf), "%04X", usrConf.kalman_en);
+  Serial.print("Password: AP-");
+  Serial.print(buf);
+  Serial.println("-KEY");
 }
 
 void testPercent()

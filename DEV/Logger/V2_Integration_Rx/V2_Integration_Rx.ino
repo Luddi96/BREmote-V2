@@ -119,13 +119,13 @@ void loop()
     }
     else if(usrConf.data_src == 2)
     {
-      getVescLoop();
+      if(!webUiEnabled) getVescLoop();
     }
 
     if(usrConf.gps_en)
     {
       //Delays 300ms non-blocking
-      gpsPoll();
+      if(!webUiEnabled) gpsPoll();
     }
   }
 
@@ -139,6 +139,7 @@ void loop()
 
   if (webUiEnabled) {
     server.handleClient();
+    vescBridgeLoop("BREmoteVESCBridge");
   }
 
   vTaskDelay(pdMS_TO_TICKS(10));
