@@ -7,7 +7,7 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 
-#include <RadioLib.h> //V7.1.2 jan gromes
+#include <RadioLib.h> //current git master by jan gromes
 #include <Wire.h>
 #include <Adafruit_ADS1X15.h> //V2.5.0 adafruit
 #include <Ticker.h>

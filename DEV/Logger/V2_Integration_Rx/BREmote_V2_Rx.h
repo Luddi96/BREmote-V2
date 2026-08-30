@@ -10,7 +10,7 @@
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
 
-#include <RadioLib.h> //V7.1.2
+#include <RadioLib.h> //current git master by jan gromes
 #include <Wire.h>
 #include <Adafruit_AW9523.h> //V1.0.5, BusIO 1.17.0
 #include "driver/rmt_tx.h"
