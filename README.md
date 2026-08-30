@@ -8,6 +8,7 @@
 * Open Source: 3D Models, Electronics and Software are GPL3.0
 * 868/915MHz Link (range dependant on antenna type, position)
 * Communication with VESC via UART / CAN
+* KISS ESC telemetry (voltage and temperature)
 * Low battery alarm (vibration)
 * Water ingress alarm integrated in receiver
 * Gears / Power Levels / Cruise Control
@@ -79,6 +80,17 @@ Rx:
 </details>
 
 <details>
+<summary>KISS ESC telemetry</summary>
+
+Connect the ESC telemetry wire to the receiver's physical `U1-0 RX` pad and
+connect both devices to a common ground. Set the two-byte `data_src` field to
+`3` to enable KISS telemetry (115200 baud, 8N1). The RX USB command
+`?printKISS` shows received bytes, valid frames, CRC errors, voltage and
+temperature; send `quit` to stop the monitor.
+
+</details>
+
+<details>
 <summary>ESC with BREmote BEC</summary>
 
 ![Conn](https://github.com/Luddi96/BREmote-V2/blob/main/img/conn_esc_bbec.PNG)
@@ -109,6 +121,8 @@ Rx:
 # Changelog:
 
 ## V2.2.x
+### 2026-08-12
+* Add RX support for KISS ESC telemetry (`data_src=3`) and `?printKISS`
 ### 2026-07-04
 * Further rf packet collision improvement (RadioLib bug [#1827](https://github.com/jgromes/RadioLib/issues/1827)
 ### 2026-07-01
