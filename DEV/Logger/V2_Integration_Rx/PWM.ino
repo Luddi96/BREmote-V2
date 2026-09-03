@@ -4,55 +4,8 @@ void generatePWM(void *parameter) {
 
   while (1) 
   {
-    uint8_t steering_input_local = steering_received;
-	uint8_t anti_thr_local = 0;
+	calcPWM();
 	
-    uint8_t thr_effective = thr_received;
-    
-    if(usrConf.steering_type == 0)
-    {
-      // Efoil mode
-      PWM0_time = constrain(map(thr_effective, 0, 255, usrConf.PWM0_min, usrConf.PWM0_max) + usrConf.trim, usrConf.PWM0_min, usrConf.PWM0_max);
-      PWM1_time = constrain(map(thr_effective, 0, 255, usrConf.PWM1_min, usrConf.PWM1_max) - usrConf.trim, usrConf.PWM1_min, usrConf.PWM1_max);
-    }
-    else if(usrConf.steering_type == 1)
-    {
-      // Differential steering
-      uint16_t throttle_0 = map(thr_effective, 0, 255, usrConf.PWM0_min, usrConf.PWM0_max);
-      uint16_t throttle_1 = map(thr_effective, 0, 255, usrConf.PWM1_min, usrConf.PWM1_max);
-      int max_steering_offset_0 = map(usrConf.steering_influence, 0, 100, 0, (usrConf.PWM0_max - usrConf.PWM0_min));
-      int max_steering_offset_1 = map(usrConf.steering_influence, 0, 100, 0, (usrConf.PWM1_max - usrConf.PWM1_min));
-      int steering_offset_0 = map(steering_input_local, 0, 255, -max_steering_offset_0, max_steering_offset_0)+1;
-      int steering_offset_1 = map(steering_input_local, 0, 255, -max_steering_offset_1, max_steering_offset_1)+1;
-      if(usrConf.steering_inverted)
-      {
-        PWM0_time = constrain(throttle_0 + usrConf.trim + steering_offset_0, usrConf.PWM0_min, usrConf.PWM0_max);
-        PWM1_time = constrain(throttle_1 - usrConf.trim - steering_offset_1, usrConf.PWM1_min, usrConf.PWM1_max);
-      }
-      else
-      {
-        PWM0_time = constrain(throttle_0 + usrConf.trim - steering_offset_0, usrConf.PWM0_min, usrConf.PWM0_max);
-        PWM1_time = constrain(throttle_1 - usrConf.trim + steering_offset_1, usrConf.PWM1_min, usrConf.PWM1_max);
-      }
-    }
-    else if(usrConf.steering_type == 2)
-    {
-      // Servo steering
-      PWM0_time = map(thr_effective, 0, 255, usrConf.PWM0_min, usrConf.PWM0_max);
-      if(usrConf.steering_inverted)
-      {  
-        PWM1_time = constrain(map(steering_input_local, 0, 255, usrConf.PWM1_min, usrConf.PWM1_max)+usrConf.trim, usrConf.PWM1_min, usrConf.PWM1_max);
-      }
-      else
-      {
-        PWM1_time = constrain(map(steering_input_local, 255, 0, usrConf.PWM1_min, usrConf.PWM1_max)+usrConf.trim, usrConf.PWM1_min, usrConf.PWM1_max);
-      }
-    }
-    else
-    {
-      PWM_active = 0;
-    }
-
     if(PWM_active && millis()-last_packet < usrConf.failsafe_time)
     {
       if(alternatePWMChannel)
@@ -61,8 +14,8 @@ void generatePWM(void *parameter) {
         generate_pulse(PWM0_time);
         vTaskDelay(pdMS_TO_TICKS(2));
         if (xSemaphoreTake(i2cMutex, portMAX_DELAY) == pdTRUE) {
-          aw.pinMode(AP_EN_PWM0, INPUT);
-          aw.pinMode(AP_EN_PWM1, OUTPUT);
+          aw.digitalWrite(AP_EN_PWM0, LOW);
+          aw.digitalWrite(AP_EN_PWM1, HIGH);
           xSemaphoreGive(i2cMutex);
         }
       }
@@ -72,14 +25,66 @@ void generatePWM(void *parameter) {
         generate_pulse(PWM1_time);
         vTaskDelay(pdMS_TO_TICKS(2));
         if (xSemaphoreTake(i2cMutex, portMAX_DELAY) == pdTRUE) {
-          aw.pinMode(AP_EN_PWM1, INPUT);
-          aw.pinMode(AP_EN_PWM0, OUTPUT);
+          aw.digitalWrite(AP_EN_PWM0, HIGH);
+          aw.digitalWrite(AP_EN_PWM1, LOW);
           xSemaphoreGive(i2cMutex);
         }
       }
     }
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
   }
+}
+
+void calcPWM()
+{
+	uint8_t steering_input_local = steering_received;
+	uint8_t anti_thr_local = 0;
+
+	uint8_t thr_effective = thr_received;
+
+	if(usrConf.steering_type == 0)
+	{
+	  // Efoil mode
+	  PWM0_time = constrain(map(thr_effective, 0, 255, usrConf.PWM0_min, usrConf.PWM0_max) + usrConf.trim, usrConf.PWM0_min, usrConf.PWM0_max);
+	  PWM1_time = constrain(map(thr_effective, 0, 255, usrConf.PWM1_min, usrConf.PWM1_max) - usrConf.trim, usrConf.PWM1_min, usrConf.PWM1_max);
+	}
+	else if(usrConf.steering_type == 1)
+	{
+	  // Differential steering
+	  uint16_t throttle_0 = map(thr_effective, 0, 255, usrConf.PWM0_min, usrConf.PWM0_max);
+	  uint16_t throttle_1 = map(thr_effective, 0, 255, usrConf.PWM1_min, usrConf.PWM1_max);
+	  int max_steering_offset_0 = map(usrConf.steering_influence, 0, 100, 0, (usrConf.PWM0_max - usrConf.PWM0_min));
+	  int max_steering_offset_1 = map(usrConf.steering_influence, 0, 100, 0, (usrConf.PWM1_max - usrConf.PWM1_min));
+	  int steering_offset_0 = map(steering_input_local, 0, 255, -max_steering_offset_0, max_steering_offset_0)+1;
+	  int steering_offset_1 = map(steering_input_local, 0, 255, -max_steering_offset_1, max_steering_offset_1)+1;
+	  if(usrConf.steering_inverted)
+	  {
+		PWM0_time = constrain(throttle_0 + usrConf.trim + steering_offset_0, usrConf.PWM0_min, usrConf.PWM0_max);
+		PWM1_time = constrain(throttle_1 - usrConf.trim - steering_offset_1, usrConf.PWM1_min, usrConf.PWM1_max);
+	  }
+	  else
+	  {
+		PWM0_time = constrain(throttle_0 + usrConf.trim - steering_offset_0, usrConf.PWM0_min, usrConf.PWM0_max);
+		PWM1_time = constrain(throttle_1 - usrConf.trim + steering_offset_1, usrConf.PWM1_min, usrConf.PWM1_max);
+	  }
+	}
+	else if(usrConf.steering_type == 2)
+	{
+	  // Servo steering
+	  PWM0_time = map(thr_effective, 0, 255, usrConf.PWM0_min, usrConf.PWM0_max);
+	  if(usrConf.steering_inverted)
+	  {  
+		PWM1_time = constrain(map(steering_input_local, 0, 255, usrConf.PWM1_min, usrConf.PWM1_max)+usrConf.trim, usrConf.PWM1_min, usrConf.PWM1_max);
+	  }
+	  else
+	  {
+		PWM1_time = constrain(map(steering_input_local, 255, 0, usrConf.PWM1_min, usrConf.PWM1_max)+usrConf.trim, usrConf.PWM1_min, usrConf.PWM1_max);
+	  }
+	}
+	else
+	{
+	  PWM_active = 0;
+	}
 }
 
 void initRMT()

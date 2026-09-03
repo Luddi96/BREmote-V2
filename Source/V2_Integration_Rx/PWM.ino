@@ -14,16 +14,22 @@ void generatePWM(void *parameter) {
         alternatePWMChannel = 0;
         generate_pulse(PWM0_time);
         vTaskDelay(pdMS_TO_TICKS(2));
-        aw.pinMode(AP_EN_PWM0, INPUT);
-        aw.pinMode(AP_EN_PWM1, OUTPUT);
+        if (xSemaphoreTake(i2cMutex, portMAX_DELAY) == pdTRUE) {
+          aw.digitalWrite(AP_EN_PWM0, LOW);
+          aw.digitalWrite(AP_EN_PWM1, HIGH);
+          xSemaphoreGive(i2cMutex);
+        }
       }
       else
       {
         alternatePWMChannel = 1;
         generate_pulse(PWM1_time);
         vTaskDelay(pdMS_TO_TICKS(2));
-        aw.pinMode(AP_EN_PWM1, INPUT);
-        aw.pinMode(AP_EN_PWM0, OUTPUT);
+        if (xSemaphoreTake(i2cMutex, portMAX_DELAY) == pdTRUE) {
+          aw.digitalWrite(AP_EN_PWM0, HIGH);
+          aw.digitalWrite(AP_EN_PWM1, LOW);
+          xSemaphoreGive(i2cMutex);
+        }
       }
     }
     vTaskDelayUntil(&xLastWakeTime, xFrequency);

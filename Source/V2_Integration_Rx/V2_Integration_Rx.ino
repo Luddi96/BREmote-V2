@@ -9,6 +9,9 @@ void setup()
 {
   enterSetup();
 
+  Serial.print("Reset reason: ");
+  Serial.println(esp_reset_reason());
+
   Wire.begin(P_I2C_SDA, P_I2C_SCL); //SDA, SCL
   Wire.setClock(400000); // Set to 400 kHz
   startupAW();
@@ -22,16 +25,27 @@ void setup()
   radio.implicitHeader(6);
   radio.startReceive();
 
+  delay(100);
+
   checkButtons();
 
-  rxIsrState = 1;
+  if(usrConf.paired == 2)
+  {
+    Serial.println("Config selected infinite pairing...");
+    while(usrConf.paired != 1)
+    {
+      Serial.println("Trying to pair...");
+      waitForPairing();
+    }
+    Serial.println("Pairing done!");
+  }
 
   initRMT();
 
   Serial1.begin(115200, SERIAL_8N1, P_U1_RX, P_U1_TX);
-  
-  aw.digitalWrite(AP_EN_PWM0, 1);
-  aw.digitalWrite(AP_EN_PWM1, 1);
+
+  safeAwWrite(AP_EN_PWM0, 1);
+  safeAwWrite(AP_EN_PWM1, 1);
 
   triggerReceiveSemaphore = xSemaphoreCreateBinary();
   loopTaskHandle = xTaskGetCurrentTaskHandle();
@@ -44,6 +58,7 @@ void setup()
   //Checks if there is connection and blinks LED, low prio
   xTaskCreatePinnedToCore(checkConnStatus, "Check_conn_staus_200ms", 2048, NULL, 2, &checkConnStatusHandle, 0);
 
+  rxIsrState = 1;
   configureGPS();
 
   exitSetup();
@@ -79,6 +94,23 @@ void loop()
         wetness_counter = 0;
       }
     }
+    if(usrConf.bms_det_active)
+    {
+      if(!safeAwRead(AP_BMS_MEAS))
+      {
+        if(telemetry.error_code == 0)
+        {
+        telemetry.error_code = 8;
+        }
+      }
+      else
+      {
+        if(telemetry.error_code == 8)
+        {
+        telemetry.error_code = 0;
+        }
+      }
+    }
 
     if(usrConf.gps_en)
     {
@@ -94,8 +126,6 @@ void loop()
       getVescLoop();
     }
   }
-
-  //telemetry.foil_speed = (millis()/1000) % 100;
 
   vTaskDelay(pdMS_TO_TICKS(10));
 }

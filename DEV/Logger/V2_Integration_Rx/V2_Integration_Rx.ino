@@ -28,7 +28,17 @@ void setup()
   delay(100);
 
   checkButtons();
-  if(usrConf.paired == 2) waitForPairing();
+
+  if(usrConf.paired == 2)
+  {
+    Serial.println("Config selected infinite pairing...");
+    while(usrConf.paired != 1)
+    {
+      Serial.println("Trying to pair...");
+      waitForPairing();
+    }
+    Serial.println("Pairing done!");
+  }
 
   initRMT();
 

@@ -54,57 +54,80 @@ uint8_t esp_crc8(uint8_t *data, uint8_t length) {
 void startupAW()
 {
   Serial.print("Starting AW9532...");
+
+  i2cMutex = xSemaphoreCreateMutex();
+  Serial.print("Starting AW9532...");
   
-  if (! aw.begin(0x58)) {
-    Serial.println("AW9523 not found!");
-    while (1) delay(10);  // halt forever
+  if (xSemaphoreTake(i2cMutex, portMAX_DELAY) == pdTRUE) {
+
+    if (! aw.begin(0x58)) {
+      Serial.println("AW9523 not found!");
+      while (1) delay(10);  // halt forever
+    }
+
+    aw.pinMode(AP_U1_MUX_0, OUTPUT);
+    aw.pinMode(AP_U1_MUX_1, OUTPUT);
+    aw.pinMode(AP_S_BIND, INPUT);
+    aw.pinMode(AP_S_AUX, INPUT);
+    aw.pinMode(AP_L_BIND, OUTPUT);
+    aw.pinMode(AP_L_AUX, OUTPUT);
+    aw.pinMode(AP_EN_BMS_MEAS, OUTPUT);
+    aw.pinMode(AP_BMS_MEAS, INPUT);
+    aw.pinMode(AP_EN_PWM0, OUTPUT);
+    aw.pinMode(AP_EN_PWM1, OUTPUT);
+    aw.pinMode(AP_EN_WET_MEAS, OUTPUT);
+    aw.pinMode(AP_WET_MEAS, INPUT);
+
+    aw.digitalWrite(AP_L_BIND, HIGH);
+    aw.digitalWrite(AP_L_AUX, HIGH);
+    aw.digitalWrite(AP_EN_BMS_MEAS, HIGH);
+    xSemaphoreGive(i2cMutex);
   }
-
-  aw.pinMode(AP_U1_MUX_0, OUTPUT);
-  aw.pinMode(AP_U1_MUX_1, OUTPUT);
-  aw.pinMode(AP_S_BIND, INPUT);
-  aw.pinMode(AP_S_AUX, INPUT);
-  aw.pinMode(AP_L_BIND, OUTPUT);
-  aw.pinMode(AP_L_AUX, OUTPUT);
-  aw.pinMode(AP_EN_BMS_MEAS, OUTPUT);
-  aw.pinMode(AP_BMS_MEAS, INPUT);
-  aw.pinMode(AP_EN_PWM0, OUTPUT);
-  aw.pinMode(AP_EN_PWM1, OUTPUT);
-  aw.pinMode(AP_EN_WET_MEAS, OUTPUT);
-  aw.pinMode(AP_WET_MEAS, INPUT);
-
-  aw.digitalWrite(AP_L_BIND, HIGH);
-  aw.digitalWrite(AP_L_AUX, HIGH);
-  aw.digitalWrite(AP_EN_BMS_MEAS, HIGH);
 
   Serial.println(" Done");
 }
 
+void safeAwWrite(uint8_t pin, uint8_t val) {
+  if (xSemaphoreTake(i2cMutex, portMAX_DELAY) == pdTRUE) {
+    aw.digitalWrite(pin, val);
+    xSemaphoreGive(i2cMutex);
+  }
+}
+
+// Safe read wrapper
+uint8_t safeAwRead(uint8_t pin) {
+  uint8_t val = 1; // Default to HIGH in case the mutex fails
+  if (xSemaphoreTake(i2cMutex, portMAX_DELAY) == pdTRUE) {
+    val = aw.digitalRead(pin);
+    xSemaphoreGive(i2cMutex);
+  }
+  return val;
+}
 void setUartMux(int channel)
 {
   if(channel == 0)
   {
-    aw.digitalWrite(AP_U1_MUX_0, LOW);
-    aw.digitalWrite(AP_U1_MUX_1, LOW);
+    safeAwWrite(AP_U1_MUX_0, LOW);
+    safeAwWrite(AP_U1_MUX_1, LOW);
   }
   if(channel == 1)
   {
-    aw.digitalWrite(AP_U1_MUX_0, HIGH);
-    aw.digitalWrite(AP_U1_MUX_1, LOW);
+    safeAwWrite(AP_U1_MUX_0, HIGH);
+    safeAwWrite(AP_U1_MUX_1, LOW);
   }
 }
 
 void checkWetness()
 {
-  aw.digitalWrite(AP_EN_WET_MEAS, HIGH);
+  safeAwWrite(AP_EN_WET_MEAS, HIGH);
   vTaskDelay(pdMS_TO_TICKS(50));
-  if(!aw.digitalRead(AP_WET_MEAS))
+  if(!safeAwRead(AP_WET_MEAS))
   {
     uint8_t amt = 0;
     for(uint8_t i = 0; i < 5; i++)
     {
       vTaskDelay(pdMS_TO_TICKS(50));
-      amt += aw.digitalRead(AP_WET_MEAS);
+      amt += safeAwRead(AP_WET_MEAS);
     }
     if(amt == 0)
     {
@@ -121,7 +144,7 @@ void checkWetness()
       telemetry.error_code = 0;
     }
   }
-  aw.digitalWrite(AP_EN_WET_MEAS, LOW);
+  safeAwWrite(AP_EN_WET_MEAS, LOW);
 }
 
 void getUbatLoop()
@@ -201,9 +224,9 @@ void blinkErr(int num, uint8_t pin)
 {
   for(int i = 0; i < num; i++)
   {
-    aw.digitalWrite(pin, LOW);
+    safeAwWrite(pin, LOW);
     delay(200);
-    aw.digitalWrite(pin, HIGH);
+    safeAwWrite(pin, HIGH);
     delay(200);
   }
   delay(500);
@@ -214,9 +237,9 @@ void blinkBind(int num)
 {
   for(int i = 0; i < num; i++)
   {
-    aw.digitalWrite(AP_L_BIND, LOW);
+    safeAwWrite(AP_L_BIND, LOW);
     delay(50);
-    aw.digitalWrite(AP_L_BIND, HIGH);
+    safeAwWrite(AP_L_BIND, HIGH);
     delay(50);
   } 
 }
@@ -286,6 +309,14 @@ void checkSerial()
       {
         testPercent();
       }
+      else if(command == "?forcePairing")
+      {
+        usrConf.paired = 2;
+        saveConfToSPIFFS(usrConf);
+        Serial.println("Pairing mode set, Rebooting now...");
+        delay(1000);
+        ESP.restart();
+      }
       else if (command == "?") {
         // List all possible inputs
         Serial.println("Possible commands:");
@@ -295,12 +326,13 @@ void checkSerial()
         Serial.println("?applyConf - read conf from SPIFFS and write to usrConf");
         Serial.println("?clearSPIFFS - Clear usrConf from SPIFFS");
         Serial.println("?clearBC - Clear batcal from SPIFFS");
+        Serial.println("?forcePairing      - Set pairing flag and reboot");
         Serial.println("?reboot - Reboot the remote");
         Serial.println("?printPWM - Print PWM values until sent 'quit'");
-        Serial.println("?printBat - Print analog Bat voltage until sent 'quit'");
-        Serial.println("?printRSSI - Print RSSI and SNR values until sent 'quit'");
-        Serial.println("?printTasks - Print task stack usage until sent 'quit'");
-        Serial.println("?printGPS - Print GPS info");
+        Serial.println("?printBat - Print Bat voltage until sent 'quit'");
+        Serial.println("?printRSSI         - Print RSSI and SNR values until 'quit'");
+
+        Serial.println("?testPercent       - Test battery % lookup with float voltages until 'quit'");
       }
       else {
         Serial.println("Unknown command. Type '?' for help.");
@@ -618,24 +650,44 @@ void serPrintConf()
 
 void checkButtons()
 {
-  if(!aw.digitalRead(AP_S_BIND))
+  //Check if Nano Rx by reading if there is an external pullup on UART1_1_Tx
+  //On Nano it is floating so it will follow the internal pullup/down
+  //On normal Rx it is pulled up externally by the levelshifter circuit
+  setUartMux(1);
+
+  pinMode(P_U1_TX, INPUT_PULLDOWN);
+  delay(5);
+  int readWithPullDown = digitalRead(P_U1_TX);
+
+  pinMode(P_U1_TX, INPUT_PULLUP);
+  delay(5);
+  int readWithPullUp = digitalRead(P_U1_TX);
+
+  if(!readWithPullDown && readWithPullUp)
   {
-    if(!aw.digitalRead(AP_S_AUX))
-    {
-      delay(10);
-      if(!aw.digitalRead(AP_S_AUX))
-      {
-        Serial.println("Deleting config and rebooting");
-        deleteConfFromSPIFFS();
-        delay(1000);
-        ESP.restart();
-      }
-    }
-    delay(10);
-    if(!aw.digitalRead(AP_S_BIND))
-    {
-      //Start pairing
-      waitForPairing();
+    Serial.println("Rx Nano detected, skip buttons...");
+  }
+  else
+  {
+	  if(!safeAwRead(AP_S_BIND))
+	  {
+	    if(!safeAwRead(AP_S_AUX))
+	    {
+	      delay(10);
+	      if(!safeAwRead(AP_S_AUX))
+	      {
+	        Serial.println("Deleting config and rebooting");
+	        deleteConfFromSPIFFS();
+	        delay(1000);
+	        ESP.restart();
+	      }
+	    }
+	    delay(10);
+	    if(!safeAwRead(AP_S_BIND))
+	    {
+	      //Start pairing
+	      waitForPairing();
+	    }
     }
   }
 }
@@ -654,7 +706,7 @@ void checkConnStatus(void *parameter)
         if(bind_pin_state != 1)
         {
           bind_pin_state = 1;
-          aw.digitalWrite(AP_L_BIND, LOW);
+          safeAwWrite(AP_L_BIND, LOW);
         }
       }
       else
@@ -662,12 +714,12 @@ void checkConnStatus(void *parameter)
         if(bind_pin_state)
         {
           bind_pin_state = 0;
-          aw.digitalWrite(AP_L_BIND, HIGH);
+          safeAwWrite(AP_L_BIND, HIGH);
         }
         else
         {
           bind_pin_state = 1;
-          aw.digitalWrite(AP_L_BIND, LOW);
+          safeAwWrite(AP_L_BIND, LOW);
         }
       }
     }
@@ -677,9 +729,9 @@ void checkConnStatus(void *parameter)
       if(unpairedBlink == 4)
       {
         unpairedBlink = 0;
-        aw.digitalWrite(AP_L_BIND, LOW);
+        safeAwWrite(AP_L_BIND, LOW);
         vTaskDelay(pdMS_TO_TICKS(10));
-        aw.digitalWrite(AP_L_BIND, HIGH);
+        safeAwWrite(AP_L_BIND, HIGH);
       }
     }
     vTaskDelayUntil(&xLastWakeTime, xFrequency);
@@ -705,8 +757,6 @@ void printConfStruct(const confStruct &data) {
 
     Serial.print("Failsafe Time: "); Serial.println(data.failsafe_time);
 
-    //Serial.print("Foil Battery Low Voltage: "); Serial.println(data.foil_bat_low, 3);
-    //Serial.print("Foil Battery High Voltage: "); Serial.println(data.foil_bat_high, 3);
     Serial.print("Foil Battery Number of Cells: "); Serial.println(data.foil_num_cells);
 
     Serial.print("BMS Detection Active: "); Serial.println(data.bms_det_active);
@@ -714,9 +764,17 @@ void printConfStruct(const confStruct &data) {
 
     Serial.print("Data Source: "); Serial.println(data.data_src);
     Serial.print("GPS Enabled: "); Serial.println(data.gps_en);
-
+    Serial.print("Follow-me Mode: "); Serial.println(data.followme_mode);
+    Serial.print("Kalman Filter Enabled: "); Serial.println(data.kalman_en);
+    Serial.print("Boogie Max Speed: "); Serial.println(data.boogie_vmax_in_followme_kmh);
+    Serial.print("Min Distance: "); Serial.println(data.min_dist_m);
+    Serial.print("Follow-me Smoothing Band: "); Serial.println(data.followme_smoothing_band_m);
+    Serial.print("Zone Angle Enter: "); Serial.println(data.zone_angle_enter_deg);
+    Serial.print("Zone Angle Exit: "); Serial.println(data.zone_angle_exit_deg);
+    Serial.print("Near Diagonal Offset: "); Serial.println(data.near_diag_offset_deg);
+    Serial.print("TX GPS Stale Timeout (ms): "); Serial.println(data.tx_gps_stale_timeout_ms);
     Serial.print("Battery Calibration (Ubat Cal): "); Serial.println(data.ubat_cal, 15);
-
+    Serial.print("Logger Enabled: "); Serial.println(data.logger_en);
     Serial.print("Paired: "); Serial.println(data.paired);
 
     Serial.print("Own Address: ");

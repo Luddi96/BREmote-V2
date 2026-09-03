@@ -4,13 +4,13 @@ void initSPIFFS()
   if(!SPIFFS.begin(false)) 
   {
     Serial.println("SPIFFS Mount Failed, Formatting Flash");
-    aw.digitalWrite(AP_L_AUX, LOW);
+    safeAwWrite(AP_L_AUX, LOW);
     if (!SPIFFS.format())
     {
       Serial.println("FORMAT ERROR!");
       while(1) blinkErr(3, AP_L_AUX);
     }
-    aw.digitalWrite(AP_L_AUX, HIGH);
+    safeAwWrite(AP_L_AUX, HIGH);
     Serial.println("Rebooting..");
     delay(200);
     esp_restart();

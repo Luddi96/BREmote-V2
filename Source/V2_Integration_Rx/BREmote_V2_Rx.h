@@ -120,6 +120,7 @@ extern TaskHandle_t loopTaskHandle;
 
 // Semaphore for triggered task
 SemaphoreHandle_t triggerReceiveSemaphore;
+SemaphoreHandle_t i2cMutex;
 
 /*
 ** Variables

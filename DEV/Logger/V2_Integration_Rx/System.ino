@@ -53,6 +53,8 @@ uint8_t esp_crc8(uint8_t *data, uint8_t length) {
 
 void startupAW()
 {
+  Serial.print("Starting AW9532...");
+
   i2cMutex = xSemaphoreCreateMutex();
   Serial.print("Starting AW9532...");
   
@@ -390,6 +392,14 @@ void checkSerial()
       {
         testPercent();
       }
+      else if(command == "?forcePairing")
+      {
+        usrConf.paired = 2;
+        saveConfToSPIFFS(usrConf);
+        Serial.println("Pairing mode set, Rebooting now...");
+        delay(1000);
+        ESP.restart();
+      }
 
       else if (command == "?list") {
           listLogFiles();
@@ -459,6 +469,7 @@ void checkSerial()
           Serial.println("?applyConf - read conf from SPIFFS and write to usrConf");
           Serial.println("?clearSPIFFS - Clear usrConf from SPIFFS");
           Serial.println("?clearBC - Clear batcal from SPIFFS");
+          Serial.println("?forcePairing      - Set pairing flag and reboot");
           Serial.println("?reboot - Reboot the remote");
           Serial.println("?printPWM - Print PWM values until sent 'quit'");
           Serial.println("?printBat - Print analog Bat voltage until sent 'quit'");
@@ -844,24 +855,44 @@ void serPrintConf()
 
 void checkButtons()
 {
-  if(!safeAwRead(AP_S_BIND))
+//Check if Nano Rx by reading if there is an external pullup on UART1_1_Tx
+  //On Nano it is floating so it will follow the internal pullup/down
+  //On normal Rx it is pulled up externally by the levelshifter circuit
+  setUartMux(1);
+
+  pinMode(P_U1_TX, INPUT_PULLDOWN);
+  delay(5);
+  int readWithPullDown = digitalRead(P_U1_TX);
+
+  pinMode(P_U1_TX, INPUT_PULLUP);
+  delay(5);
+  int readWithPullUp = digitalRead(P_U1_TX);
+
+  if(!readWithPullDown && readWithPullUp)
   {
-    if(!safeAwRead(AP_S_AUX))
-    {
-      delay(10);
-      if(!safeAwRead(AP_S_AUX))
-      {
-        Serial.println("Deleting config and rebooting");
-        deleteConfFromSPIFFS();
-        delay(1000);
-        ESP.restart();
-      }
-    }
-    delay(10);
-    if(!safeAwRead(AP_S_BIND))
-    {
-      //Start pairing
-      waitForPairing();
+    Serial.println("Rx Nano detected, skip buttons...");
+  }
+  else
+  {
+	  if(!safeAwRead(AP_S_BIND))
+	  {
+	    if(!safeAwRead(AP_S_AUX))
+	    {
+	      delay(10);
+	      if(!safeAwRead(AP_S_AUX))
+	      {
+	        Serial.println("Deleting config and rebooting");
+	        deleteConfFromSPIFFS();
+	        delay(1000);
+	        ESP.restart();
+	      }
+	    }
+	    delay(10);
+	    if(!safeAwRead(AP_S_BIND))
+	    {
+	      //Start pairing
+	      waitForPairing();
+	    }
     }
   }
 }
