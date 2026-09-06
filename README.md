@@ -14,16 +14,47 @@
 * Charging and Programming via USB
 
 ## Links:
-* [Build Video](https://youtu.be/Fw4YdQWvs6I)
-* [SW Setup & Config Video](https://youtu.be/r6JIZEq3aTU)
-* [Config Tool](https://lbre.de/BREmote/struct.html)
+
+### Videos:
+
+<details>
+<summary>Build Logs (<-open)</summary>
+
+* [#1: Frankenstein](https://youtube.com/shorts/WTDl78fUoms)
+* [#2: First Demo of V2](https://youtu.be/LEpEsWbisg0)
+* [#3: First Working Prototype](https://youtu.be/mQs5-Zjtvak)
+* [#4: Videos of V2 in Action](https://youtu.be/PwP42KR0XCg)
+* [#5: GPS Demo](https://youtube.com/shorts/FHg6_6AkiIw)
+* [#6: NANO Tx](https://youtu.be/5pOXrJwp_Hw)
+* [#7: NANO Rx](https://youtu.be/QyAsgHsLu8w)
+
+</details>
+
+* [#9.0: Build Video](https://youtu.be/Fw4YdQWvs6I)
+* [#9.3: NANO Build Video](https://youtu.be/5MdmIF84HN0)
+* [#9.1: Usage and Updates](https://youtu.be/r6JIZEq3aTU)
+* [#9.4: Config Update](https://youtu.be/K6lIZkDvQfY)
+* [#9.5: Improved Battery Measurement (LUT)](https://youtu.be/Mp6ousHFNtM)
+* [#9.6: GPS Integration](https://youtu.be/24d-lHl9csI)
+
+### Tools:
+
 * [Serial Terminal](https://lbre.de/BREmote/sertest.html)
-* [Expo Tool](https://lbre.de/BREmote/expo.html)
+* [Config Tool](https://lbre.de/BREmote/struct.html)
+
 * [Flash Download Tool](https://dl.espressif.com/public/flash_download_tool.zip)
-* [LUT creation tool](https://lbre.de/BREmote/bat_conf.html)
+
 * [Premade LUTs](https://lbre.de/BREmote/LUT.html)
+* [LUT creation tool](https://lbre.de/BREmote/bat_conf.html)
+* [LUT decode tool](https://lbre.de/BREmote/bat_decode.html)
+* [Per Cell Current Calculator](https://lbre.de/BREmote/per_cell_calc.html)
 * [Plot digitizer](https://apps.automeris.io/downloads/WebPlotDigitizer-4.7-win32-x64.zip)
 
+* [Expo Tool](https://lbre.de/BREmote/expo.html)
+* [Calibration Factor Tool](https://lbre.de/BREmote/ubat_cal.html)
+
+* [Log viewer (offline)](https://lbre.de/BREmote/logview1-1.html)
+* [LogTRC (online)](https://www.logtrc.com/)
 
 ## Usage:
 
