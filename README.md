@@ -41,7 +41,8 @@
 Basic:
 * [Serial Terminal](https://lbre.de/BREmote/sertest.html)
 * [Config Tool](https://lbre.de/BREmote/struct.html)
-* [Flash Download Tool](https://dl.espressif.com/public/flash_download_tool.zip)
+* [NEW Browser Firmware Tool](https://lbre.de/BREmote/firmware.html)
+* [OLD Flash Download Tool](https://dl.espressif.com/public/flash_download_tool.zip)
 
 LUT/Bat Measurement:
 * [Premade LUTs](https://lbre.de/BREmote/LUT.html)
@@ -60,6 +61,34 @@ Logging:
 
 ## Usage:
 
+## Display Mapping:
+
+![Banner](https://github.com/Luddi96/BREmote-V2/blob/main/img/disp.PNG)
+
+<details>
+<summary>Mapping ( <-open )</summary>
+
+Bat:
+- 1(blink): SOC <= 5%
+- 1:  SOC >5% - 14%
+- 2:  SOC 15% - 24%
+- 3:  SOC 25% - 34%
+- 4:  SOC 35% - 44%
+- 5:  SOC 45% - 54%
+- 6:  SOC 55% - 64%
+- 7:  SOC 65% - 74%
+- 8:  SOC 75% - 84%
+- 9:  SOC 85% - 94%
+- 10: SOC >95%
+
+Temp:
+- 1: Temp <= 32°C
+- 2: Temp 33°C - 44°C
+- 3: Temp 45°C - 57°C
+- 4: Temp 58°C - 69°C
+- 5: Temp >= 70°C
+
+</details>
 
 ## Status/Error Codes:
 Tx:
@@ -136,6 +165,39 @@ Rx:
 <summary>ESC + Servo</summary>
 
 ![Conn](https://github.com/Luddi96/BREmote-V2/blob/main/img/conn_esc_servo.PNG)
+
+</details>
+
+# Compile Dates:
+
+<details>
+<summary>Open Table</summary>
+
+|Board|Version|Compile Date|
+|-----|--------|------------|
+|Tx|2.2.7.2|14:43:30 Jul 11 2026|
+||2.2.7.1|15:37:08 Jul 4 2026|
+||2.2.7|19:07:05 Jul 2 2026|
+||2.2.6|18:46:13 Jul 1 2026|
+||2.2.5|17:55:23 Jun 14 2026|
+||2.2.4|19:11:14 Jan 22 2026|
+||2.2.3|20:53:53 Nov 28 2025|
+||2.2.2|19:06:44 Oct 6 2025|
+||2.2.1|13:02:34 Sep 20 2025|
+||2.1.7|14:26:35 Aug 16 2025|
+||2.1.6|21:42:14 Jul 18 2025|
+|Rx|2.2.8.1|09:17:32 Sep 22 2026|
+||2.2.7.1|15:38:22 Jul 4 2026|
+||2.2.7|19:29:41 Jul 2 2026|
+||2.2.3|11:40:58 Jan 26 2026|
+||2.2.2|18:23:34 Oct 23 2025|
+||2.2.1|00:43:56 Sep 24 2025|
+||2.1.7|20:15:24 Jul 10 2025|
+||2.1.6|20:15:24 Jul 10 2025|
+|Rx LOG|2.2.8.1|09:25:45 Sep 22 2026|
+||2.2.8|11:48:26 Aug 29 2026|
+||2.2.7.2|14:23:00 Jul 11 2026|
+||2.2.4|18:00:08 Jun 14 2026|
 
 </details>
 

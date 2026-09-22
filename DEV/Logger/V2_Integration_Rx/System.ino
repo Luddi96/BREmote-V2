@@ -56,7 +56,6 @@ void startupAW()
   Serial.print("Starting AW9532...");
 
   i2cMutex = xSemaphoreCreateMutex();
-  Serial.print("Starting AW9532...");
   
   if (xSemaphoreTake(i2cMutex, portMAX_DELAY) == pdTRUE) {
 
