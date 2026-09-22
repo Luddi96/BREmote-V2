@@ -71,7 +71,7 @@ bool getValuesSelective(Stream* interface)
     //String sprt = "Fet Temp: " + String(vesc.fetTemp) + "°C, Mot. Curr.: " + String(vesc.motCur) + "A, Inp. Curr: " + String(vesc.batCur) + "A, ERPM: " + String(vesc.erpm) + ", Duty: " + String(vesc.duty) + "%, Volt: " + String(vesc.batVolt) + "V, Fault: " + String(vesc.fault_code);
     //Serial.println(sprt);
 
-    if(usrConf.debug_byte & 1)
+    if(usrConf.debug_byte & 1<<0)
     {
       String sprt = "Fet Temp: " + String(vesc.fetTemp/10.0) + "°C, Mot. Curr.: " + String(vesc.motCur/100.0) + "A, Inp. Curr: " + String(vesc.batCur/100.0) + "A, ERPM: " + String(vesc.erpm) + ", Duty: " + String(vesc.duty/10.0) + "%, Volt: " + String(vesc.batVolt/10.0) + "V, Fault: " + String(vesc.fault_code);
       Serial.println(sprt);

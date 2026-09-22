@@ -678,7 +678,7 @@ void gpsPoll() {
     static unsigned long lastWorkingMsg = 0;
     if (millis() - lastWorkingMsg > 10000) {
       lastWorkingMsg = millis();
-      if(usrConf.debug_byte & 2)
+      if(usrConf.debug_byte & 1<<1)
       {
        Serial.printf("[DEBUG] GPS DATA OK - Fix:%d, Sats:%d, Speed:%.1fkm/h\n", 
                      gps.fix_quality, gps.satellites, gps.speed);

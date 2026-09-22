@@ -38,21 +38,23 @@
 * [#9.6: GPS Integration](https://youtu.be/24d-lHl9csI)
 
 ### Tools:
-
+Basic:
 * [Serial Terminal](https://lbre.de/BREmote/sertest.html)
 * [Config Tool](https://lbre.de/BREmote/struct.html)
-
 * [Flash Download Tool](https://dl.espressif.com/public/flash_download_tool.zip)
 
+LUT/Bat Measurement:
 * [Premade LUTs](https://lbre.de/BREmote/LUT.html)
 * [LUT creation tool](https://lbre.de/BREmote/bat_conf.html)
 * [LUT decode tool](https://lbre.de/BREmote/bat_decode.html)
 * [Per Cell Current Calculator](https://lbre.de/BREmote/per_cell_calc.html)
 * [Plot digitizer](https://apps.automeris.io/downloads/WebPlotDigitizer-4.7-win32-x64.zip)
 
+Misc:
 * [Expo Tool](https://lbre.de/BREmote/expo.html)
 * [Calibration Factor Tool](https://lbre.de/BREmote/ubat_cal.html)
 
+Logging:
 * [Log viewer (offline)](https://lbre.de/BREmote/logview1-1.html)
 * [LogTRC (online)](https://www.logtrc.com/)
 

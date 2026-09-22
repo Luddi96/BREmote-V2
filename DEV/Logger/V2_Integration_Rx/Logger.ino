@@ -57,7 +57,7 @@ bool ensureFreeSpace() {
   size_t totalBytes = SPIFFS.totalBytes();
   size_t freeBytes = totalBytes - SPIFFS.usedBytes();
 
-  if(usrConf.debug_byte & 3)
+  if(usrConf.debug_byte & 1<<2)
   {
     Serial.printf("Logger running, %u KB free\n", freeBytes / 1024);
   }
@@ -145,10 +145,10 @@ bool createNewLogFile() {
   while (gps.fix_quality == 0 || gps.datetime < 1000000) {
     vTaskDelay(pdMS_TO_TICKS(500));
 
-    if (millis() - startWait > 300000) {  // 5 minute timeout
+    /*if (millis() - startWait > 3600000) {  // 60 minute timeout
       Serial.println("GPS fix timeout!");
       return false;
-    }
+    }*/
 
     if (!logging_active) {  // Check if logging was stopped
       return false;
