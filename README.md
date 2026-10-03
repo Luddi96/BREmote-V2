@@ -168,6 +168,13 @@ Rx:
 
 </details>
 
+<details>
+<summary>Nano Rx</summary>
+
+![Conn](https://github.com/Luddi96/BREmote-V2/blob/main/img/conn_nano.PNG)
+
+</details>
+
 # Compile Dates:
 
 <details>

@@ -1,0 +1,9 @@
+Changelog Rx Nano
+
+PRE:
+- Initial version
+V2.1:
+- Move 1 via close to WiFi pin
+- Add solder helpers to bottom layer connectors
+- Swap DN/DP
+- Add milled slot - move ESP_EN line
