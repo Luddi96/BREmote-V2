@@ -183,6 +183,16 @@ bool waitForPairing()
   return false;
 }
 
+static inline uint32_t get_u24(const uint8_t *p) {
+    return ((uint32_t)p[0] << 16) | ((uint32_t)p[1] << 8) | p[2];
+}
+
+static inline void put_u24(uint8_t *p, uint32_t v) {
+    p[0] = (uint8_t)(v >> 16);
+    p[1] = (uint8_t)(v >> 8);
+    p[2] = (uint8_t)v;
+}
+
 void triggeredReceive(void *parameter) {
   while (1)
   {
@@ -200,21 +210,89 @@ void triggeredReceive(void *parameter) {
         printHexArray(rcvArray,6);
         #endif
 
-        if (memcmp(rcvArray, usrConf.own_address, 3) == 0) 
+        //Check difference between requested and own address
+        uint32_t rem_idx = (get_u24(rcvArray) - get_u24(usrConf.own_address)) & 0xFFFFFF;
+
+        if (rem_idx >= 0 && rem_idx <= 2) 
         {
-          rxprintln("Address matches");
+          rxprint("Address matches, remote Nr.: ");
+          rxprintln(rem_idx);
           
           if (rcvArray[5] == esp_crc8(rcvArray, 5)) 
           {
             last_packet = millis();
+            multi_last_packet[rem_idx] = millis();
+
             rxprintln("CRC ok");
             rxprint("RSSI: ");
             rxprint(radio.getRSSI());
             rxprint(", SNR: ");
             rxprintln(radio.getSNR());
 
-            thr_received = rcvArray[3];
-            steering_received =  rcvArray[4];
+            multi_thr_received[rem_idx] = rcvArray[3];
+            multi_steering_received[rem_idx] =  rcvArray[4];
+
+            //Wait for all remotes to idle
+            if(multi_active_remote == -1)
+            {
+              //All remotes idle:
+              bool allIdle = true;
+              for (int i = 0; i < 3; i++)
+              {
+                  if (multi_thr_received[i] != 0 || multi_steering_received[i] != 127)
+                  {
+                      allIdle = false;
+                      break;
+                  }
+              }
+              if(allIdle)
+              {
+                multi_active_remote = -2;
+                //Serial.println("Transition to -2");
+              }
+              else
+              {
+                /*Serial.println("Stuck in -1");
+                for(int i = 0; i < 3; i++)
+                {
+                  Serial.print(multi_thr_received[i]);
+                  Serial.print(", ");
+                  Serial.println(multi_steering_received[i]);
+                }*/
+              }
+            }
+            //Wait for one remote to request thr/str
+            if(multi_active_remote == -2)
+            {
+              if(multi_thr_received[rem_idx] != 0 || multi_steering_received[rem_idx] != 127)
+              {
+                multi_active_remote = rem_idx;
+                //Serial.print("Set active: ");
+                //Serial.println(multi_active_remote);
+              }
+            }
+            //One remote is active
+            if(multi_active_remote >= 0 && multi_active_remote <= 2)
+            { //Is it the current one?
+              if(multi_active_remote == rem_idx)
+              {
+                //Apply its data
+                thr_received = multi_thr_received[rem_idx];
+                steering_received = multi_steering_received[rem_idx];
+                //remote idles -> free the active remote
+                if(thr_received == 0 && steering_received == 127)
+                {
+                  multi_active_remote = -1;
+                }
+              }
+              else
+              { //Other remote also sending non-idle -> Send Error E1/E2/E3
+                if(multi_thr_received[rem_idx] != 0 || multi_steering_received[rem_idx] != 127)
+                {
+                  dual_use_error = multi_active_remote+1;
+                }
+              }
+            }
 
             telemetry.link_quality = getLinkQuality(radio.getRSSI(), radio.getSNR());
 
@@ -222,15 +300,22 @@ void triggeredReceive(void *parameter) {
 
             uint8_t sendArray[6];
 
-            memcpy(sendArray, usrConf.dest_address, 3);
+            put_u24(sendArray, (get_u24(usrConf.dest_address) + rem_idx) & 0xFFFFFF);
 
-            uint8_t* ptr = (uint8_t*)&telemetry;
-            
-            sendArray[3] = telemetry_index;
-            
-            sendArray[4] = ptr[telemetry_index];
+            if(dual_use_error >= 1 && dual_use_error <= 3)
+            {
+              sendArray[3] = 3;
+              sendArray[4] = dual_use_error;
+              dual_use_error = -1;
+            }
+            else
+            {
+              uint8_t* ptr = (uint8_t*)&telemetry;
+              sendArray[3] = telemetry_index;
+              sendArray[4] = ptr[telemetry_index];
+              telemetry_index++;
+            }
 
-            telemetry_index++;
             if(telemetry_index >= sizeof(TelemetryPacket))
             {
               telemetry_index = 0;

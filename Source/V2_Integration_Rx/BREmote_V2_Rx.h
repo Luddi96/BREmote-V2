@@ -154,6 +154,12 @@ volatile bool PWM_active = 0;
 volatile uint16_t PWM0_time = 0;
 volatile uint16_t PWM1_time = 0;
 
+volatile uint8_t multi_thr_received[] = {0, 0, 0};
+volatile uint8_t multi_steering_received[] = {127, 127, 127};
+volatile int multi_active_remote = -1;
+volatile unsigned long multi_last_packet[] = {0, 0, 0};
+volatile int dual_use_error = -1;
+
 volatile uint8_t thr_received = 0;
 volatile uint8_t steering_received = 127;
 

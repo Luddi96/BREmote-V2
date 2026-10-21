@@ -36,6 +36,7 @@
 * [#9.4: Config Update](https://youtu.be/K6lIZkDvQfY)
 * [#9.5: Improved Battery Measurement (LUT)](https://youtu.be/Mp6ousHFNtM)
 * [#9.6: GPS Integration](https://youtu.be/24d-lHl9csI)
+* [#9.7: Multi Tx Sharing](https://youtu.be/_KuIyeXrpo4)
 
 ### Tools:
 Basic:

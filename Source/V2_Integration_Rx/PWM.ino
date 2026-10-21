@@ -8,6 +8,15 @@ void generatePWM(void *parameter) {
 
     if(PWM_active && millis()-last_packet < usrConf.failsafe_time)
     {
+      if(multi_active_remote >=0 && multi_active_remote <=2)
+      {
+        if(millis()-multi_last_packet[multi_active_remote] >= usrConf.failsafe_time)
+        {
+          thr_received = multi_thr_received[multi_active_remote] = 0;
+          steering_received = multi_steering_received[multi_active_remote] = 127;
+          multi_active_remote = -1;
+        }
+      }
 
       if(alternatePWMChannel)
       {
