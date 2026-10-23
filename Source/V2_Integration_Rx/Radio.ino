@@ -221,6 +221,11 @@ void triggeredReceive(void *parameter) {
           if (rcvArray[5] == esp_crc8(rcvArray, 5)) 
           {
             last_packet = millis();
+            //check if remote was disconnedted previously and all remotes are in idle
+            if(millis()-multi_last_packet[rem_idx] >= usrConf.failsafe_time && multi_active_remote == -2)
+            {
+              multi_active_remote = -1;
+            }
             multi_last_packet[rem_idx] = millis();
 
             rxprintln("CRC ok");
@@ -248,6 +253,7 @@ void triggeredReceive(void *parameter) {
                 if (multi_thr_received[i] != 0 || multi_steering_received[i] != 127)
                 {
                     allIdle = false;
+                    dual_use_error = i+1;
                     break;
                 }
               }
