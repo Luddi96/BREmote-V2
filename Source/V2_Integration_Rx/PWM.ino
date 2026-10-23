@@ -15,6 +15,7 @@ void generatePWM(void *parameter) {
           thr_received = multi_thr_received[multi_active_remote] = 0;
           steering_received = multi_steering_received[multi_active_remote] = 127;
           multi_active_remote = -1;
+          calcPWM();
         }
       }
 

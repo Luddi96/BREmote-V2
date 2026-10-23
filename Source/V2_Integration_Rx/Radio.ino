@@ -239,11 +239,17 @@ void triggeredReceive(void *parameter) {
               bool allIdle = true;
               for (int i = 0; i < 3; i++)
               {
-                  if (multi_thr_received[i] != 0 || multi_steering_received[i] != 127)
-                  {
-                      allIdle = false;
-                      break;
-                  }
+                if(millis()-multi_last_packet[i] >= usrConf.failsafe_time)
+                {
+                  multi_thr_received[i] = 0;
+                  multi_steering_received[i] = 127;
+                }
+
+                if (multi_thr_received[i] != 0 || multi_steering_received[i] != 127)
+                {
+                    allIdle = false;
+                    break;
+                }
               }
               if(allIdle)
               {
