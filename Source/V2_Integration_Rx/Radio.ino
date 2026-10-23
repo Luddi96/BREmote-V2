@@ -193,6 +193,43 @@ static inline void put_u24(uint8_t *p, uint32_t v) {
     p[2] = (uint8_t)v;
 }
 
+void checkAllIdle()
+{
+  //All remotes idle:
+  bool allIdle = true;
+  bool cameFromFailsafe = false;
+  for (int i = 0; i < 3; i++)
+  {
+    if(millis()-multi_last_packet[i] >= usrConf.failsafe_time)
+    {
+      multi_thr_received[i] = 0;
+      multi_steering_received[i] = 127;
+    }
+
+    if (multi_thr_received[i] != 0 || multi_steering_received[i] != 127)
+    {
+        allIdle = false;
+        dual_use_error = i+1;
+        break;
+    }
+  }
+  if(allIdle)
+  {
+    multi_active_remote = -2;
+    //Serial.println("Transition to -2");
+  }
+  else
+  {
+    /*Serial.println("Stuck in -1");
+    for(int i = 0; i < 3; i++)
+    {
+      Serial.print(multi_thr_received[i]);
+      Serial.print(", ");
+      Serial.println(multi_steering_received[i]);
+    }*/
+  }
+}
+
 void triggeredReceive(void *parameter) {
   while (1)
   {
@@ -222,7 +259,7 @@ void triggeredReceive(void *parameter) {
           {
             last_packet = millis();
             //check if remote was disconnedted previously and all remotes are in idle
-            if(millis()-multi_last_packet[rem_idx] >= usrConf.failsafe_time && multi_active_remote == -2)
+            if((millis()-multi_last_packet[rem_idx] >= usrConf.failsafe_time && multi_active_remote == -2) && multi_last_remote != rem_idx)
             {
               multi_active_remote = -1;
             }
@@ -240,38 +277,7 @@ void triggeredReceive(void *parameter) {
             //Wait for all remotes to idle
             if(multi_active_remote == -1)
             {
-              //All remotes idle:
-              bool allIdle = true;
-              for (int i = 0; i < 3; i++)
-              {
-                if(millis()-multi_last_packet[i] >= usrConf.failsafe_time)
-                {
-                  multi_thr_received[i] = 0;
-                  multi_steering_received[i] = 127;
-                }
-
-                if (multi_thr_received[i] != 0 || multi_steering_received[i] != 127)
-                {
-                    allIdle = false;
-                    dual_use_error = i+1;
-                    break;
-                }
-              }
-              if(allIdle)
-              {
-                multi_active_remote = -2;
-                //Serial.println("Transition to -2");
-              }
-              else
-              {
-                /*Serial.println("Stuck in -1");
-                for(int i = 0; i < 3; i++)
-                {
-                  Serial.print(multi_thr_received[i]);
-                  Serial.print(", ");
-                  Serial.println(multi_steering_received[i]);
-                }*/
-              }
+              checkAllIdle();
             }
             //Wait for one remote to request thr/str
             if(multi_active_remote == -2)
@@ -279,6 +285,7 @@ void triggeredReceive(void *parameter) {
               if(multi_thr_received[rem_idx] != 0 || multi_steering_received[rem_idx] != 127)
               {
                 multi_active_remote = rem_idx;
+                multi_last_remote = multi_active_remote;
                 //Serial.print("Set active: ");
                 //Serial.println(multi_active_remote);
               }
@@ -295,6 +302,7 @@ void triggeredReceive(void *parameter) {
                 if(thr_received == 0 && steering_received == 127)
                 {
                   multi_active_remote = -1;
+                  checkAllIdle();
                 }
               }
               else
